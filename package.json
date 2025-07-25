@@ -14,18 +14,16 @@
   "dependencies": {
     "@ai-sdk/openai": "^1.3.23",
     "@convex-dev/auth": "^0.0.80",
-    "ai": "^4.3.19",
-    "clsx": "^2.1.1",
     "convex": "^1.24.2",
     "openai": "^5.10.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "sonner": "^2.0.3",
-    "tailwind-merge": "^3.1.0",
     "zod": "^3.25.76",
     "zustand": "^5.0.6"
   },
   "devDependencies": {
+    "ai": "^4.3.19",
     "@eslint/js": "^9.21.0",
     "@types/node": "^22.13.10",
     "@types/react": "^19.0.10",

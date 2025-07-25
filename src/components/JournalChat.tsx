@@ -2,12 +2,16 @@ import { useState, useRef, useEffect } from "react";
 import { useMutation, useQuery, useAction } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { toast } from "sonner";
-import { ChatMessage, JournalEntry } from "../lib/types";
+import { ChatMessage } from "../lib/types";
 import { useSessionStore } from "../lib/store";
+import { MessageBubble } from "./ui/MessageBubble";
+import { LoadingSpinner } from "./ui/LoadingSpinner";
+import { ChatInput } from "./ChatInput";
+import { SessionSummary } from "./SessionSummary";
+import { ChatSkeleton } from "./ChatSkeleton";
 
 export function JournalChat() {
   const sessionId = useSessionStore((state) => state.sessionId);
-  const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -48,36 +52,31 @@ export function JournalChat() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!message.trim() || isLoading) return;
-
-    const userMessage = message.trim();
-    setMessage("");
+  const handleSubmit = async (message: string) => {
     setIsLoading(true);
 
     try {
       // Add user message to chat
       await addChatMessage({
-        content: userMessage,
+        content: message,
         role: "user",
         type: "entry",
         sessionId,
       });
 
       // Save as journal entry if it's substantial
-      if (userMessage.length > 20) {
+      if (message.length > 20) {
         await saveJournalEntry({
-          content: userMessage,
+          content: message,
           sessionId,
         });
       }
 
       // Generate AI response
       await generateAIResponse({
-        userMessage,
+        userMessage: message,
         sessionId,
-        isNewEntry: userMessage.length > 20,
+        isNewEntry: message.length > 20,
       });
     } catch (error) {
       console.error("Error:", error);
@@ -87,20 +86,13 @@ export function JournalChat() {
     }
   };
 
-  const formatTime = (timestamp: number) => {
-    return new Date(timestamp).toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
   if (!chatHistory) {
     return <ChatSkeleton />;
   }
 
   return (
     <div className="max-w-3xl mx-auto">
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col h-[calc(100vh-12rem)]">
         {/* Session Header */}
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-100">
           <div className="flex items-center justify-between">
@@ -121,45 +113,15 @@ export function JournalChat() {
         </div>
 
         {/* Chat Messages */}
-        <div className="h-96 overflow-y-auto p-6 space-y-4">
+        <div className="flex-1 overflow-y-auto p-6 space-y-4">
           {chatHistory.map((msg: ChatMessage) => (
-            <div
-              key={msg._id}
-              className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-            >
-              <div
-                className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl ${
-                  msg.role === "user"
-                    ? "bg-blue-500 text-white"
-                    : "bg-gray-100 text-gray-800"
-                }`}
-              >
-                <p className="text-sm leading-relaxed">{msg.content}</p>
-                <p
-                  className={`text-xs mt-2 ${
-                    msg.role === "user" ? "text-blue-100" : "text-gray-500"
-                  }`}
-                >
-                  {formatTime(msg._creationTime)}
-                </p>
-              </div>
-            </div>
+            <MessageBubble key={msg._id} message={msg} />
           ))}
 
           {isLoading && (
             <div className="flex justify-start">
               <div className="bg-gray-100 rounded-2xl px-4 py-3">
-                <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                  <div
-                    className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                    style={{ animationDelay: "0.1s" }}
-                  ></div>
-                  <div
-                    className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                    style={{ animationDelay: "0.2s" }}
-                  ></div>
-                </div>
+                <LoadingSpinner />
               </div>
             </div>
           )}
@@ -168,139 +130,15 @@ export function JournalChat() {
         </div>
 
         {/* Input Form */}
-        <div className="border-t border-gray-100 p-4">
-          <form
-            onSubmit={(e) => {
-              void handleSubmit(e);
-            }}
-            className="flex gap-3"
-          >
-            <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Continue your journaling session..."
-              className="flex-1 resize-none rounded-xl border border-gray-200 px-4 py-3 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
-              rows={2}
-              disabled={isLoading}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  void handleSubmit(e);
-                }
-              }}
-            />
-            <button
-              type="submit"
-              disabled={!message.trim() || isLoading}
-              className="px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
-            >
-              {isLoading ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-white rounded-full animate-bounce"></div>
-                  <div
-                    className="w-2 h-2 bg-white rounded-full animate-bounce"
-                    style={{ animationDelay: "0.1s" }}
-                  ></div>
-                  <div
-                    className="w-2 h-2 bg-white rounded-full animate-bounce"
-                    style={{ animationDelay: "0.2s" }}
-                  ></div>
-                </div>
-              ) : (
-                "Send"
-              )}
-            </button>
-          </form>
-          <p className="text-xs text-gray-500 mt-2 text-center">
-            Press Enter to send, Shift+Enter for new line
-          </p>
-        </div>
+        <ChatInput
+          onSubmit={(message) => void handleSubmit(message)}
+          isLoading={isLoading}
+        />
       </div>
 
       {/* Session Summary */}
       <div className="mt-8">
         <SessionSummary sessionId={sessionId} />
-      </div>
-    </div>
-  );
-}
-
-function SessionSummary({ sessionId }: { sessionId: string }) {
-  const entries = useQuery(api.entries.getJournalEntries, { sessionId });
-  const chatHistory = useQuery(api.chat.getChatHistory, { sessionId });
-
-  if (!entries || !chatHistory || chatHistory.length === 0) {
-    return null;
-  }
-
-  const userMessages = chatHistory.filter(
-    (msg: ChatMessage) => msg.role === "user"
-  ).length;
-  const journalEntries = entries.length;
-
-  return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-      <h3 className="text-lg font-semibold text-gray-800 mb-4">
-        Session Summary
-      </h3>
-
-      <div className="grid grid-cols-2 gap-4 mb-4">
-        <div className="text-center p-3 bg-blue-50 rounded-lg">
-          <div className="text-2xl font-bold text-blue-600">{userMessages}</div>
-          <div className="text-sm text-gray-600">Messages</div>
-        </div>
-        <div className="text-center p-3 bg-green-50 rounded-lg">
-          <div className="text-2xl font-bold text-green-600">
-            {journalEntries}
-          </div>
-          <div className="text-sm text-gray-600">Journal Entries</div>
-        </div>
-      </div>
-
-      {entries.length > 0 && (
-        <div className="space-y-3">
-          <h4 className="font-medium text-gray-700">Recent Entries:</h4>
-          {entries.slice(0, 2).map((entry: JournalEntry) => (
-            <div
-              key={entry._id}
-              className="text-left p-3 bg-gray-50 rounded-lg"
-            >
-              <p className="text-sm text-gray-700 line-clamp-2">
-                {entry.content.substring(0, 120)}...
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                {new Date(entry._creationTime).toLocaleTimeString()}
-              </p>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ChatSkeleton() {
-  return (
-    <div className="max-w-3xl mx-auto">
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-100">
-          <div className="h-6 bg-gray-200 rounded w-1/3 mb-2"></div>
-          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-        </div>
-        <div className="h-96 overflow-y-auto p-6 space-y-4">
-          <div className="flex justify-end">
-            <div className="w-2/3 h-12 bg-gray-200 rounded-2xl"></div>
-          </div>
-          <div className="flex justify-start">
-            <div className="w-1/2 h-16 bg-gray-200 rounded-2xl"></div>
-          </div>
-          <div className="flex justify-end">
-            <div className="w-1/3 h-8 bg-gray-200 rounded-2xl"></div>
-          </div>
-        </div>
-        <div className="border-t border-gray-100 p-4">
-          <div className="h-16 bg-gray-200 rounded-xl"></div>
-        </div>
       </div>
     </div>
   );

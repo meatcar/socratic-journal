@@ -3,12 +3,10 @@ import { useMutation, useQuery, useAction } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { toast } from "sonner";
 import { ChatMessage, JournalEntry } from "../lib/types";
+import { useSessionStore } from "../lib/store";
 
-interface JournalChatProps {
-  sessionId: string;
-}
-
-export function JournalChat({ sessionId }: JournalChatProps) {
+export function JournalChat() {
+  const sessionId = useSessionStore((state) => state.sessionId);
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);

@@ -3,16 +3,11 @@ import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { toast } from "sonner";
 import { Session } from "../lib/types";
+import { useSessionStore } from "../lib/store";
 
-interface SessionManagerProps {
-  currentSessionId: string;
-  onSessionChange: (sessionId: string) => void;
-}
-
-export function SessionManager({
-  currentSessionId,
-  onSessionChange,
-}: SessionManagerProps) {
+export function SessionManager() {
+  const { sessionId: currentSessionId, setSessionId: onSessionChange } =
+    useSessionStore();
   const [showSessions, setShowSessions] = useState(false);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);

@@ -5,23 +5,12 @@ import { SignOutButton } from "./SignOutButton";
 import { Toaster } from "sonner";
 import { JournalChat } from "./components/JournalChat";
 import { SessionManager } from "./components/SessionManager";
-import { useState, useEffect } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
+import { useSessionStore } from "./lib/store";
 
 export default function App() {
-  const [sessionId, setSessionId] = useState<string>("");
+  const sessionId = useSessionStore((state) => state.sessionId);
   const loggedInUser = useQuery(api.auth.loggedInUser);
-
-  useEffect(() => {
-    // Generate session ID for users
-    if (!sessionId) {
-      setSessionId(crypto.randomUUID());
-    }
-  }, [sessionId]);
-
-  const handleSessionChange = (newSessionId: string) => {
-    setSessionId(newSessionId);
-  };
 
   return (
     <ErrorBoundary>
@@ -39,10 +28,7 @@ export default function App() {
               </div>
 
               <div className="flex items-center gap-4">
-                <SessionManager
-                  currentSessionId={sessionId}
-                  onSessionChange={handleSessionChange}
-                />
+                <SessionManager />
                 <span className="text-sm text-gray-600">
                   Welcome, {loggedInUser?.email?.split("@")[0]}
                 </span>
@@ -58,7 +44,7 @@ export default function App() {
                 between sessions or start a new one anytime.
               </p>
             </div>
-            <JournalChat sessionId={sessionId} />
+            <JournalChat />
           </main>
         </Authenticated>
 

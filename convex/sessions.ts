@@ -76,14 +76,14 @@ export const setActiveSession = mutation({
         const userId = await getAuthUserId(ctx);
 
         if (userId) {
-            // Deactivate all sessions
-            const allSessions = await ctx.db
+            // Deactivate the current active session
+            const currentActive = await ctx.db
                 .query("sessions")
-                .withIndex("by_user", (q) => q.eq("userId", userId))
-                .collect();
+                .withIndex("by_user_active", (q) => q.eq("userId", userId).eq("isActive", true))
+                .first();
 
-            for (const session of allSessions) {
-                await ctx.db.patch(session._id, { isActive: false });
+            if (currentActive) {
+                await ctx.db.patch(currentActive._id, { isActive: false });
             }
 
             // Activate the selected session

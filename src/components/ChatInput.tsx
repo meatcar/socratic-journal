@@ -35,8 +35,13 @@ export function ChatInput({ onSubmit, isLoading }: ChatInputProps) {
             handleSubmit(e);
           }
         }}
+        aria-label="Journal entry input"
       />
-      <Button type="submit" disabled={!message.trim() || isLoading}>
+      <Button
+        type="submit"
+        disabled={!message.trim() || isLoading}
+        aria-label="Send journal entry"
+      >
         {isLoading ? <LoadingSpinner /> : "Send"}
       </Button>
     </form>

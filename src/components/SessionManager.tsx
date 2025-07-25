@@ -83,6 +83,8 @@ export function SessionManager() {
       <Button
         onClick={() => setShowSessions(!showSessions)}
         variant="secondary"
+        aria-haspopup="true"
+        aria-expanded={showSessions}
       >
         <span className="text-sm font-medium">Sessions</span>
         <svg
@@ -92,6 +94,7 @@ export function SessionManager() {
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
+          aria-hidden="true"
         >
           <path
             strokeLinecap="round"
@@ -103,15 +106,23 @@ export function SessionManager() {
       </Button>
 
       {showSessions && (
-        <div className="absolute top-full left-0 mt-2 w-80 bg-white border border-gray-200 rounded-xl shadow-lg z-10">
+        <div
+          className="absolute top-full left-0 mt-2 w-80 bg-white border border-gray-200 rounded-xl shadow-lg z-10"
+          role="menu"
+          aria-orientation="vertical"
+          aria-labelledby="sessions-menu"
+        >
           <div className="p-4 border-b border-gray-100">
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-gray-800">Journal Sessions</h3>
+              <h3 className="font-semibold text-gray-800" id="sessions-menu">
+                Journal Sessions
+              </h3>
               <Button
                 onClick={() => {
                   void handleNewSession();
                 }}
                 disabled={isCreatingNew}
+                role="menuitem"
               >
                 {isCreatingNew ? <LoadingSpinner /> : "New Session"}
               </Button>

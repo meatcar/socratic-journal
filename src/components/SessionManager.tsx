@@ -121,9 +121,16 @@ export function SessionManager({
                   void handleNewSession();
                 }}
                 disabled={isCreatingNew}
-                className="px-3 py-1 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 disabled:opacity-50 transition-colors"
+                className="px-3 py-1 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 disabled:opacity-50 transition-colors flex items-center gap-2"
               >
-                {isCreatingNew ? "Creating..." : "New Session"}
+                {isCreatingNew ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Creating...
+                  </>
+                ) : (
+                  "New Session"
+                )}
               </button>
             </div>
           </div>

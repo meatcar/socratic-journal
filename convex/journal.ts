@@ -1,4 +1,5 @@
 import { v } from "convex/values";
+import { z } from "zod";
 import { query, mutation, action } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { api } from "./_generated/api";
@@ -11,17 +12,17 @@ export const createSession = mutation({
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
-    
+
     // Check if session already exists
     const existingSession = await ctx.db
       .query("sessions")
       .withIndex("by_session_id", (q) => q.eq("sessionId", args.sessionId))
       .first();
-    
+
     if (existingSession) {
       return existingSession._id;
     }
-    
+
     return await ctx.db.insert("sessions", {
       userId: userId || undefined,
       sessionId: args.sessionId,
@@ -36,7 +37,7 @@ export const getSessions = query({
   args: {},
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
-    
+
     if (userId) {
       return await ctx.db
         .query("sessions")
@@ -44,7 +45,7 @@ export const getSessions = query({
         .order("desc")
         .take(20);
     }
-    
+
     return [];
   },
 });
@@ -53,14 +54,14 @@ export const getActiveSession = query({
   args: {},
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
-    
+
     if (userId) {
       return await ctx.db
         .query("sessions")
         .withIndex("by_user_active", (q) => q.eq("userId", userId).eq("isActive", true))
         .first();
     }
-    
+
     return null;
   },
 });
@@ -71,24 +72,24 @@ export const setActiveSession = mutation({
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
-    
+
     if (userId) {
       // Deactivate all sessions
       const allSessions = await ctx.db
         .query("sessions")
         .withIndex("by_user", (q) => q.eq("userId", userId))
         .collect();
-      
+
       for (const session of allSessions) {
         await ctx.db.patch(session._id, { isActive: false });
       }
-      
+
       // Activate the selected session
       const targetSession = await ctx.db
         .query("sessions")
         .withIndex("by_session_id", (q) => q.eq("sessionId", args.sessionId))
         .first();
-      
+
       if (targetSession) {
         await ctx.db.patch(targetSession._id, { isActive: true });
       }
@@ -106,7 +107,7 @@ export const updateSessionTitle = mutation({
       .query("sessions")
       .withIndex("by_session_id", (q) => q.eq("sessionId", args.sessionId))
       .first();
-    
+
     if (session) {
       await ctx.db.patch(session._id, { title: args.title });
     }
@@ -123,7 +124,7 @@ export const updateSessionSummary = mutation({
       .query("sessions")
       .withIndex("by_session_id", (q) => q.eq("sessionId", args.sessionId))
       .first();
-    
+
     if (session) {
       await ctx.db.patch(session._id, { summary: args.summary });
     }
@@ -132,8 +133,8 @@ export const updateSessionSummary = mutation({
 
 // Chat Messages
 export const getChatHistory = query({
-  args: { 
-    sessionId: v.string() 
+  args: {
+    sessionId: v.string()
   },
   handler: async (ctx, args) => {
     return await ctx.db
@@ -153,7 +154,7 @@ export const addChatMessage = mutation({
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
-    
+
     // Insert the message
     const messageId = await ctx.db.insert("chatMessages", {
       userId: userId || undefined,
@@ -162,28 +163,28 @@ export const addChatMessage = mutation({
       content: args.content,
       type: args.type,
     });
-    
+
     // Update session message count
     const session = await ctx.db
       .query("sessions")
       .withIndex("by_session_id", (q) => q.eq("sessionId", args.sessionId))
       .first();
-    
+
     if (session) {
-      await ctx.db.patch(session._id, { 
+      await ctx.db.patch(session._id, {
         messageCount: session.messageCount + 1,
-        isActive: true 
+        isActive: true
       });
     }
-    
+
     return messageId;
   },
 });
 
 // Journal Entries (for substantial entries)
 export const getJournalEntries = query({
-  args: { 
-    sessionId: v.string() 
+  args: {
+    sessionId: v.string()
   },
   handler: async (ctx, args) => {
     return await ctx.db
@@ -203,7 +204,7 @@ export const saveJournalEntry = mutation({
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
-    
+
     return await ctx.db.insert("journalEntries", {
       userId: userId || undefined,
       sessionId: args.sessionId,
@@ -223,30 +224,30 @@ export const generateAIResponse = action({
   },
   handler: async (ctx, args): Promise<string> => {
     const userId = await getAuthUserId(ctx);
-    
+
     // Get recent journal entries for context
-    const recentEntries = await ctx.runQuery(api.journal.getJournalEntries, { 
-      sessionId: args.sessionId 
+    const recentEntries = await ctx.runQuery(api.journal.getJournalEntries, {
+      sessionId: args.sessionId
     });
-    
+
     // Get chat history for this session
-    const chatHistory = await ctx.runQuery(api.journal.getChatHistory, { 
-      sessionId: args.sessionId 
+    const chatHistory = await ctx.runQuery(api.journal.getChatHistory, {
+      sessionId: args.sessionId
     });
-    
-    // Use the bundled OpenAI from Convex
-    const OpenAI = (await import("openai")).default;
-    const client = new OpenAI({
-      baseURL: process.env.CONVEX_OPENAI_BASE_URL,
-      apiKey: process.env.CONVEX_OPENAI_API_KEY,
+
+    // Use the Vercel AI SDK
+    const { generateObject } = await import("ai");
+    const { createOpenAI } = await import("@ai-sdk/openai");
+    const openai = createOpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
     });
 
     // Build context from recent entries and chat
-    const entriesContext: string = recentEntries.slice(0, 3).map((entry: any) => 
+    const entriesContext: string = recentEntries.slice(0, 3).map((entry: any) =>
       `Entry: ${entry.content.substring(0, 200)}...`
     ).join('\n');
-    
-    const chatContext: string = chatHistory.slice(-6).map((msg: any) => 
+
+    const chatContext: string = chatHistory.slice(-6).map((msg: any) =>
       `${msg.role}: ${msg.content}`
     ).join('\n');
 
@@ -281,17 +282,17 @@ ${entriesContext}`;
 
     systemPrompt += `\nReply immediately below:`;
 
-    const response = await client.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: args.userMessage }
-      ],
-      max_tokens: 200,
+    const { object } = await generateObject({
+      model: openai("gpt-4o-mini"),
+      system: systemPrompt,
+      prompt: args.userMessage,
+      schema: z.object({
+        response: z.string().describe("The AI's response to the user's message"),
+      }),
+      maxTokens: 200,
       temperature: 0.7,
     });
-
-    const aiResponse: string = response.choices[0]?.message?.content || "I'm here to listen. How are you feeling today?";
+    const aiResponse = object.response;
 
     // Save AI response to chat
     await ctx.runMutation(api.journal.addChatMessage, {
@@ -311,37 +312,34 @@ export const generateSessionSummary = action({
     sessionId: v.string(),
   },
   handler: async (ctx, args): Promise<string | null> => {
-    const chatHistory = await ctx.runQuery(api.journal.getChatHistory, { 
-      sessionId: args.sessionId 
+    const chatHistory = await ctx.runQuery(api.journal.getChatHistory, {
+      sessionId: args.sessionId
     });
-    
+
     if (chatHistory.length < 4) return null; // Need some content to summarize
-    
-    const OpenAI = (await import("openai")).default;
-    const client = new OpenAI({
-      baseURL: process.env.CONVEX_OPENAI_BASE_URL,
-      apiKey: process.env.CONVEX_OPENAI_API_KEY,
-    });
-    
-    const conversationText: string = chatHistory.map((msg: any) => 
+
+
+    const conversationText: string = chatHistory.map((msg: any) =>
       `${msg.role}: ${msg.content}`
     ).join('\n');
-    
-    const response = await client.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [{
-        role: "system",
-        content: `Summarize this journaling session in 2-3 sentences. Focus on key themes, emotions, and insights. Be empathetic and concise.`
-      }, {
-        role: "user",
-        content: conversationText
-      }],
-      max_tokens: 100,
+
+    const { generateObject } = await import("ai");
+    const { createOpenAI } = await import("@ai-sdk/openai");
+    const openai = createOpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+    const { object: summaryObject } = await generateObject({
+      model: openai("gpt-4o-mini"),
+      system: `Summarize this journaling session in 2-3 sentences. Focus on key themes, emotions, and insights. Be empathetic and concise.`,
+      prompt: conversationText,
+      schema: z.object({
+        summary: z.string().describe("The summarized text"),
+      }),
+      maxTokens: 100,
       temperature: 0.5,
     });
-    
-    const summary: string = response.choices[0]?.message?.content || "";
-    
+    const summary = summaryObject.summary;
+
     // Update session with summary using mutation
     if (summary) {
       await ctx.runMutation(api.journal.updateSessionSummary, {
@@ -349,7 +347,7 @@ export const generateSessionSummary = action({
         summary: summary
       });
     }
-    
+
     return summary;
   },
 });

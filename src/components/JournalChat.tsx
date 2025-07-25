@@ -11,7 +11,7 @@ export function JournalChat({ sessionId }: JournalChatProps) {
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
+
   const chatHistory = useQuery(api.journal.getChatHistory, { sessionId });
   const addChatMessage = useMutation(api.journal.addChatMessage);
   const saveJournalEntry = useMutation(api.journal.saveJournalEntry);
@@ -29,7 +29,7 @@ export function JournalChat({ sessionId }: JournalChatProps) {
   // Create session and send initial prompt if no chat history
   useEffect(() => {
     if (chatHistory && chatHistory.length === 0) {
-      handleInitialSetup();
+      void handleInitialSetup();
     }
   }, [chatHistory]);
 
@@ -37,7 +37,7 @@ export function JournalChat({ sessionId }: JournalChatProps) {
     try {
       // Create the session first
       await createSession({ sessionId });
-      
+
       // Then generate initial prompt
       await generateAIResponse({
         userMessage: "Start a new journaling session",
@@ -80,8 +80,6 @@ export function JournalChat({ sessionId }: JournalChatProps) {
         sessionId,
         isNewEntry: userMessage.length > 20,
       });
-
-      toast.success("Message sent");
     } catch (error) {
       console.error("Error:", error);
       toast.error("Something went wrong. Please try again.");
@@ -91,9 +89,9 @@ export function JournalChat({ sessionId }: JournalChatProps) {
   };
 
   const formatTime = (timestamp: number) => {
-    return new Date(timestamp).toLocaleTimeString([], { 
-      hour: '2-digit', 
-      minute: '2-digit' 
+    return new Date(timestamp).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -112,9 +110,12 @@ export function JournalChat({ sessionId }: JournalChatProps) {
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-100">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-gray-800">Current Session</h2>
+              <h2 className="text-lg font-semibold text-gray-800">
+                Current Session
+              </h2>
               <p className="text-sm text-gray-600">
-                {chatHistory.length} messages • Started {new Date().toLocaleDateString()}
+                {chatHistory.length} messages • Started{" "}
+                {new Date().toLocaleDateString()}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -139,33 +140,46 @@ export function JournalChat({ sessionId }: JournalChatProps) {
                 }`}
               >
                 <p className="text-sm leading-relaxed">{msg.content}</p>
-                <p className={`text-xs mt-2 ${
-                  msg.role === "user" ? "text-blue-100" : "text-gray-500"
-                }`}>
+                <p
+                  className={`text-xs mt-2 ${
+                    msg.role === "user" ? "text-blue-100" : "text-gray-500"
+                  }`}
+                >
                   {formatTime(msg._creationTime)}
                 </p>
               </div>
             </div>
           ))}
-          
+
           {isLoading && (
             <div className="flex justify-start">
               <div className="bg-gray-100 rounded-2xl px-4 py-3">
                 <div className="flex space-x-1">
                   <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
+                  <div
+                    className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                    style={{ animationDelay: "0.1s" }}
+                  ></div>
+                  <div
+                    className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                    style={{ animationDelay: "0.2s" }}
+                  ></div>
                 </div>
               </div>
             </div>
           )}
-          
+
           <div ref={messagesEndRef} />
         </div>
 
         {/* Input Form */}
         <div className="border-t border-gray-100 p-4">
-          <form onSubmit={handleSubmit} className="flex gap-3">
+          <form
+            onSubmit={(e) => {
+              void handleSubmit(e);
+            }}
+            className="flex gap-3"
+          >
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
@@ -176,7 +190,7 @@ export function JournalChat({ sessionId }: JournalChatProps) {
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
-                  handleSubmit(e);
+                  void handleSubmit(e);
                 }
               }}
             />
@@ -210,7 +224,7 @@ function SessionSummary({ sessionId }: { sessionId: string }) {
     return null;
   }
 
-  const userMessages = chatHistory.filter(msg => msg.role === "user").length;
+  const userMessages = chatHistory.filter((msg) => msg.role === "user").length;
   const journalEntries = entries.length;
 
   return (
@@ -218,14 +232,16 @@ function SessionSummary({ sessionId }: { sessionId: string }) {
       <h3 className="text-lg font-semibold text-gray-800 mb-4">
         Session Summary
       </h3>
-      
+
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div className="text-center p-3 bg-blue-50 rounded-lg">
           <div className="text-2xl font-bold text-blue-600">{userMessages}</div>
           <div className="text-sm text-gray-600">Messages</div>
         </div>
         <div className="text-center p-3 bg-green-50 rounded-lg">
-          <div className="text-2xl font-bold text-green-600">{journalEntries}</div>
+          <div className="text-2xl font-bold text-green-600">
+            {journalEntries}
+          </div>
           <div className="text-sm text-gray-600">Journal Entries</div>
         </div>
       </div>
@@ -234,7 +250,10 @@ function SessionSummary({ sessionId }: { sessionId: string }) {
         <div className="space-y-3">
           <h4 className="font-medium text-gray-700">Recent Entries:</h4>
           {entries.slice(0, 2).map((entry) => (
-            <div key={entry._id} className="text-left p-3 bg-gray-50 rounded-lg">
+            <div
+              key={entry._id}
+              className="text-left p-3 bg-gray-50 rounded-lg"
+            >
               <p className="text-sm text-gray-700 line-clamp-2">
                 {entry.content.substring(0, 120)}...
               </p>

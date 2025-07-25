@@ -14,7 +14,8 @@ const applicationTables = {
     messageCount: v.number(), // Number of messages in this session
   }).index("by_user", ["userId"])
     .index("by_session_id", ["sessionId"])
-    .index("by_user_active", ["userId", "isActive"]),
+    .index("by_user_active", ["userId", "isActive"])
+    .index("by_message_count", ["messageCount"]),
 
   chatMessages: defineTable({
     userId: v.optional(v.id("users")),

@@ -1,6 +1,7 @@
 import { Session } from "../lib/types";
 import { formatDate } from "../lib/utils";
 import { Button } from "./ui/Button";
+import { ListBox, ListBoxItem, TextField, Input } from "react-aria-components";
 
 interface SessionListProps {
   sessions: Session[];
@@ -28,26 +29,41 @@ export function SessionList({
   onGenerateSummary,
 }: SessionListProps) {
   return (
-    <div className="max-h-64 overflow-y-auto">
-      {sessions && sessions.length > 0 ? (
-        sessions.map((session: Session) => (
-          <div
-            key={session._id}
-            className={`p-4 border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors ${
-              session.sessionId === currentSessionId
-                ? "bg-blue-50 border-blue-100"
-                : ""
-            }`}
-            onClick={() => onSessionSelect(session.sessionId)}
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                {editingSessionId === session.sessionId ? (
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={editingTitle}
-                      onChange={(e) => onTitleChange(e.target.value)}
+    <ListBox
+      items={sessions}
+      aria-label="Sessions"
+      selectionMode="single"
+      selectedKeys={[currentSessionId]}
+      onSelectionChange={(keys) => {
+        if (keys !== "all") {
+          const key = keys.values().next().value;
+          if (key) {
+            onSessionSelect(String(key));
+          }
+        }
+      }}
+      className="max-h-64 overflow-y-auto"
+    >
+      {(item) => (
+        <ListBoxItem
+          id={item._id}
+          textValue={item.title ?? "Untitled Session"}
+          className={`p-4 border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors ${
+            item.sessionId === currentSessionId
+              ? "bg-blue-50 border-blue-100"
+              : ""
+          }`}
+        >
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              {editingSessionId === item.sessionId ? (
+                <div className="flex items-center gap-2">
+                  <TextField
+                    value={editingTitle}
+                    onChange={onTitleChange}
+                    aria-label="Edit session title"
+                  >
+                    <Input
                       className="w-full px-2 py-1 border rounded-md"
                       autoFocus
                       onKeyDown={(e) => {
@@ -55,64 +71,54 @@ export function SessionList({
                         if (e.key === "Escape") onTitleCancel();
                       }}
                     />
-                    <Button onClick={onTitleSave} variant="primary">
-                      Save
-                    </Button>
-                    <Button onClick={onTitleCancel} variant="secondary">
-                      Cancel
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <h4 className="font-medium text-gray-800 text-sm">
-                      {session.title || "Untitled Session"}
-                    </h4>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onTitleEdit(session);
-                      }}
-                      className="text-xs text-blue-500"
-                    >
-                      Edit
-                    </button>
-                  </div>
-                )}
-                {session.summary && (
-                  <p className="text-xs text-gray-600 mt-1 line-clamp-2">
-                    {session.summary}
-                  </p>
-                )}
-                <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
-                  <span>{session.messageCount} messages</span>
-                  <span>{formatDate(session._creationTime)}</span>
-                  {session.isActive && (
-                    <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full">
-                      Active
-                    </span>
-                  )}
+                  </TextField>
+                  <Button onPress={onTitleSave} variant="primary">
+                    Save
+                  </Button>
+                  <Button onPress={onTitleCancel} variant="secondary">
+                    Cancel
+                  </Button>
                 </div>
-              </div>
-
-              {!session.summary && session.messageCount > 3 && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onGenerateSummary(session.sessionId);
-                  }}
-                  className="text-xs text-blue-600 hover:text-blue-800 ml-2"
-                >
-                  Summarize
-                </button>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <h4 className="font-medium text-gray-800 text-sm">
+                    {item.title || "Untitled Session"}
+                  </h4>
+                  <Button
+                    onPress={() => onTitleEdit(item)}
+                    className="text-xs ml-auto"
+                  >
+                    Edit
+                  </Button>
+                </div>
               )}
+              {item.summary && (
+                <p className="text-xs text-gray-600 mt-1 line-clamp-2">
+                  {item.summary}
+                </p>
+              )}
+              <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
+                <span>{item.messageCount} messages</span>
+                <span>{formatDate(item._creationTime)}</span>
+                {item.isActive && (
+                  <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full">
+                    Active
+                  </span>
+                )}
+              </div>
             </div>
+
+            {!item.summary && item.messageCount > 3 && (
+              <Button
+                onPress={() => onGenerateSummary(item.sessionId)}
+                className="text-xs text-blue-600 hover:text-blue-800 ml-2"
+              >
+                Summarize
+              </Button>
+            )}
           </div>
-        ))
-      ) : (
-        <div className="p-4 text-center text-gray-500 text-sm">
-          No sessions yet. Start journaling to create your first session!
-        </div>
+        </ListBoxItem>
       )}
-    </div>
+    </ListBox>
   );
 }

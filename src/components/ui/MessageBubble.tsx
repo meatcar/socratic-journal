@@ -1,5 +1,6 @@
 import { ChatMessage } from "../../lib/types";
 import { formatTime } from "../../lib/utils";
+import { Text } from "react-aria-components";
 
 interface MessageBubbleProps {
   message: ChatMessage;
@@ -16,14 +17,14 @@ export function MessageBubble({ message }: MessageBubbleProps) {
           isUser ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-800"
         }`}
       >
-        <p className="text-sm leading-relaxed">{content}</p>
-        <p
+        <Text className="text-sm leading-relaxed">{content}</Text>
+        <Text
           className={`text-xs mt-2 ${
             isUser ? "text-blue-100" : "text-gray-500"
           }`}
         >
           {formatTime(_creationTime)}
-        </p>
+        </Text>
       </div>
     </div>
   );

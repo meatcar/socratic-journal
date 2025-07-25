@@ -30,7 +30,7 @@ export default function App() {
               <div className="flex items-center gap-4">
                 <SessionManager />
                 <span className="text-sm text-gray-600">
-                  Welcome, {loggedInUser?.email?.split("@")[0]}
+                  Welcome, {loggedInUser?.email}
                 </span>
                 <SignOutButton />
               </div>

@@ -4,7 +4,13 @@ import { api } from "../../convex/_generated/api";
 import { toast } from "sonner";
 import { Session } from "../lib/types";
 import { useSessionStore } from "../lib/store";
-import { Button } from "./ui/Button";
+import {
+  Button,
+  Menu,
+  MenuItem,
+  MenuTrigger,
+  Popover,
+} from "react-aria-components";
 import { LoadingSpinner } from "./ui/LoadingSpinner";
 import { SessionList } from "./SessionList";
 
@@ -79,18 +85,11 @@ export function SessionManager() {
   };
 
   return (
-    <div className="relative">
-      <Button
-        onClick={() => setShowSessions(!showSessions)}
-        variant="secondary"
-        aria-haspopup="true"
-        aria-expanded={showSessions}
-      >
+    <MenuTrigger>
+      <Button className="flex items-center gap-2" aria-label="Sessions menu">
         <span className="text-sm font-medium">Sessions</span>
         <svg
-          className={`w-4 h-4 transition-transform ${
-            showSessions ? "rotate-180" : ""
-          }`}
+          className="w-4 h-4"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -104,51 +103,47 @@ export function SessionManager() {
           />
         </svg>
       </Button>
-
-      {showSessions && (
-        <div
-          className="absolute top-full left-0 mt-2 w-80 bg-white border border-gray-200 rounded-xl shadow-lg z-10"
-          role="menu"
-          aria-orientation="vertical"
-          aria-labelledby="sessions-menu"
-        >
-          <div className="p-4 border-b border-gray-100">
-            <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-gray-800" id="sessions-menu">
-                Journal Sessions
-              </h3>
-              <Button
-                onClick={() => {
-                  void handleNewSession();
-                }}
-                disabled={isCreatingNew}
-                role="menuitem"
-              >
-                {isCreatingNew ? <LoadingSpinner /> : "New Session"}
-              </Button>
+      <Popover className="w-80 bg-white border border-gray-200 rounded-xl shadow-lg z-10">
+        <Menu>
+          <MenuItem>
+            <div className="p-4 border-b border-gray-100">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-gray-800" id="sessions-menu">
+                  Journal Sessions
+                </h3>
+                <Button
+                  onPress={() => {
+                    void handleNewSession();
+                  }}
+                  isDisabled={isCreatingNew}
+                >
+                  {isCreatingNew ? <LoadingSpinner /> : "New Session"}
+                </Button>
+              </div>
             </div>
-          </div>
-
+          </MenuItem>
           {sessions && (
-            <SessionList
-              sessions={sessions}
-              currentSessionId={currentSessionId}
-              editingSessionId={editingSessionId}
-              editingTitle={editingTitle}
-              onSessionSelect={(sessionId) =>
-                void handleSessionSelect(sessionId)
-              }
-              onTitleEdit={handleTitleEdit}
-              onTitleSave={() => void handleTitleSave()}
-              onTitleChange={setEditingTitle}
-              onTitleCancel={() => setEditingSessionId(null)}
-              onGenerateSummary={(sessionId) =>
-                void handleGenerateSummary(sessionId)
-              }
-            />
+            <MenuItem>
+              <SessionList
+                sessions={sessions}
+                currentSessionId={currentSessionId}
+                editingSessionId={editingSessionId}
+                editingTitle={editingTitle}
+                onSessionSelect={(sessionId) =>
+                  void handleSessionSelect(sessionId)
+                }
+                onTitleEdit={handleTitleEdit}
+                onTitleSave={() => void handleTitleSave()}
+                onTitleChange={setEditingTitle}
+                onTitleCancel={() => setEditingSessionId(null)}
+                onGenerateSummary={(sessionId) =>
+                  void handleGenerateSummary(sessionId)
+                }
+              />
+            </MenuItem>
           )}
-        </div>
-      )}
-    </div>
+        </Menu>
+      </Popover>
+    </MenuTrigger>
   );
 }

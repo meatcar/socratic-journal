@@ -1,24 +1,35 @@
-import React from "react";
+import {
+  TextField,
+  Label,
+  TextArea,
+  FieldError,
+  type TextFieldProps,
+  type TextAreaProps,
+} from "react-aria-components";
 
-interface FormInputProps
-  extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
-  label?: string;
-  error?: string;
-}
-
-export function FormInput({ label, error, ...props }: FormInputProps) {
+export function FormInput({
+  label,
+  error,
+  ...props
+}: TextFieldProps &
+  TextAreaProps & {
+    label?: string;
+    error?: string;
+  }) {
   return (
-    <div>
+    <TextField className="w-full">
       {label && (
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <Label className="block text-sm font-medium text-gray-700 mb-1">
           {label}
-        </label>
+        </Label>
       )}
-      <textarea
+      <TextArea
         className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all resize-none"
         {...props}
       />
-      {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
-    </div>
+      {error && (
+        <FieldError className="text-red-500 text-sm mt-1">{error}</FieldError>
+      )}
+    </TextField>
   );
 }

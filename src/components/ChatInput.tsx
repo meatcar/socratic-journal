@@ -21,25 +21,26 @@ export function ChatInput({ onSubmit, isLoading }: ChatInputProps) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex gap-3 items-start p-4 border-t border-gray-100"
+      className="flex gap-3 items-stretch p-4 border-t border-gray-100"
     >
       <FormInput
         value={message}
-        onChange={(e) => setMessage(e.target.value)}
+        onChange={(e) => setMessage(typeof e === "string" ? e : e.target.value)}
         placeholder="Continue your journaling session..."
         rows={2}
-        disabled={isLoading}
-        onKeyDown={(e) => {
+        isDisabled={isLoading}
+        onKeyDown={(e: React.KeyboardEvent<HTMLTextAreaElement>) => {
           if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
-            handleSubmit(e);
+            handleSubmit(e as unknown as React.FormEvent);
           }
         }}
         aria-label="Journal entry input"
       />
       <Button
         type="submit"
-        disabled={!message.trim() || isLoading}
+        isDisabled={!message.trim() || isLoading}
+        className="h-full"
         aria-label="Send journal entry"
       >
         {isLoading ? <LoadingSpinner /> : "Send"}

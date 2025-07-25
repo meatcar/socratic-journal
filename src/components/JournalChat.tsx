@@ -13,11 +13,11 @@ export function JournalChat({ sessionId }: JournalChatProps) {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const chatHistory = useQuery(api.journal.getChatHistory, { sessionId });
-  const addChatMessage = useMutation(api.journal.addChatMessage);
-  const saveJournalEntry = useMutation(api.journal.saveJournalEntry);
-  const generateAIResponse = useAction(api.journal.generateAIResponse);
-  const createSession = useMutation(api.journal.createSession);
+  const chatHistory = useQuery(api.chat.getChatHistory, { sessionId });
+  const addChatMessage = useMutation(api.chat.addChatMessage);
+  const saveJournalEntry = useMutation(api.entries.saveJournalEntry);
+  const generateAIResponse = useAction(api.ai.generateAIResponse);
+  const createSession = useMutation(api.sessions.createSession);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -128,7 +128,7 @@ export function JournalChat({ sessionId }: JournalChatProps) {
 
         {/* Chat Messages */}
         <div className="h-96 overflow-y-auto p-6 space-y-4">
-          {chatHistory.map((msg) => (
+          {chatHistory.map((msg: ChatMessage) => (
             <div
               key={msg._id}
               className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
@@ -218,14 +218,16 @@ export function JournalChat({ sessionId }: JournalChatProps) {
 }
 
 function SessionSummary({ sessionId }: { sessionId: string }) {
-  const entries = useQuery(api.journal.getJournalEntries, { sessionId });
-  const chatHistory = useQuery(api.journal.getChatHistory, { sessionId });
+  const entries = useQuery(api.entries.getJournalEntries, { sessionId });
+  const chatHistory = useQuery(api.chat.getChatHistory, { sessionId });
 
   if (!entries || !chatHistory || chatHistory.length === 0) {
     return null;
   }
 
-  const userMessages = chatHistory.filter((msg) => msg.role === "user").length;
+  const userMessages = chatHistory.filter(
+    (msg: ChatMessage) => msg.role === "user"
+  ).length;
   const journalEntries = entries.length;
 
   return (
@@ -250,7 +252,7 @@ function SessionSummary({ sessionId }: { sessionId: string }) {
       {entries.length > 0 && (
         <div className="space-y-3">
           <h4 className="font-medium text-gray-700">Recent Entries:</h4>
-          {entries.slice(0, 2).map((entry) => (
+          {entries.slice(0, 2).map((entry: JournalEntry) => (
             <div
               key={entry._id}
               className="text-left p-3 bg-gray-50 rounded-lg"

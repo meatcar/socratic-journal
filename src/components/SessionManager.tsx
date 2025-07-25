@@ -18,10 +18,10 @@ export function SessionManager({
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
 
-  const sessions = useQuery(api.journal.getSessions);
-  const setActiveSession = useMutation(api.journal.setActiveSession);
-  const updateSessionTitle = useMutation(api.journal.updateSessionTitle);
-  const generateSessionSummary = useAction(api.journal.generateSessionSummary);
+  const sessions = useQuery(api.sessions.getSessions);
+  const setActiveSession = useMutation(api.sessions.setActiveSession);
+  const updateSessionTitle = useMutation(api.sessions.updateSessionTitle);
+  const generateSessionSummary = useAction(api.ai.generateSessionSummary);
 
   const handleNewSession = async () => {
     setIsCreatingNew(true);
@@ -130,7 +130,7 @@ export function SessionManager({
 
           <div className="max-h-64 overflow-y-auto">
             {sessions && sessions.length > 0 ? (
-              sessions.map((session) => (
+              sessions.map((session: Session) => (
                 <div
                   key={session._id}
                   className={`p-4 border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors ${

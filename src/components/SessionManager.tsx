@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { toast } from "sonner";
+import { Session } from "../lib/types";
 
 interface SessionManagerProps {
   currentSessionId: string;
@@ -59,9 +60,9 @@ export function SessionManager({
     }
   };
 
-  const handleTitleEdit = (session: any) => {
+  const handleTitleEdit = (session: Session) => {
     setEditingSessionId(session.sessionId);
-    setEditingTitle(session.title);
+    setEditingTitle(session.title ?? "");
   };
 
   const handleTitleSave = async () => {

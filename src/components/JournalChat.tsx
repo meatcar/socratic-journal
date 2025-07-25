@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useMutation, useQuery, useAction } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { toast } from "sonner";
+import { ChatMessage, JournalEntry } from "../lib/types";
 
 interface JournalChatProps {
   sessionId: string;

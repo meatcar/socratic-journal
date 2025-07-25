@@ -258,17 +258,14 @@ export const generateAIResponse = action({
 
     // Use the Vercel AI SDK
     const { generateObject } = await import("ai");
-    const { createOpenAI } = await import("@ai-sdk/openai");
-    const openai = createOpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
+    const { openai } = await import("./lib/openai");
 
     // Build context from recent entries and chat
-    const entriesContext: string = recentEntries.slice(0, 3).map((entry: any) =>
+    const entriesContext: string = recentEntries.slice(0, 3).map((entry) =>
       `Entry: ${entry.content.substring(0, 200)}...`
     ).join('\n');
 
-    const chatContext: string = chatHistory.slice(-6).map((msg: any) =>
+    const chatContext: string = chatHistory.slice(-6).map((msg) =>
       `${msg.role}: ${msg.content}`
     ).join('\n');
 
@@ -337,14 +334,11 @@ export const generateSessionTitle = internalAction({
     if (chatHistory.length < 6) return null;
 
     const conversationText: string = chatHistory
-      .map((msg: any) => `${msg.role}: ${msg.content}`)
+      .map((msg) => `${msg.role}: ${msg.content}`)
       .join("\n");
 
     const { generateObject } = await import("ai");
-    const { createOpenAI } = await import("@ai-sdk/openai");
-    const openai = createOpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
+    const { openai } = await import("./lib/openai");
 
     try {
       const { object } = await generateObject({
@@ -403,15 +397,12 @@ export const generateSessionSummary = action({
     if (chatHistory.length < 4) return null; // Need some content to summarize
 
 
-    const conversationText: string = chatHistory.map((msg: any) =>
+    const conversationText: string = chatHistory.map((msg) =>
       `${msg.role}: ${msg.content}`
     ).join('\n');
 
     const { generateObject } = await import("ai");
-    const { createOpenAI } = await import("@ai-sdk/openai");
-    const openai = createOpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
+    const { openai } = await import("./lib/openai");
     const { object: summaryObject } = await generateObject({
       model: openai("gpt-4o-mini"),
       system: `Summarize this journaling session in 2-3 sentences. Focus on key themes, emotions, and insights. Be empathetic and concise.`,
@@ -488,3 +479,4 @@ export const deleteSessionAndMessages = internalMutation({
     }
   },
 });
+

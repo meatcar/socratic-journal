@@ -16,6 +16,7 @@ import type {
 import type * as auth from "../auth.js";
 import type * as http from "../http.js";
 import type * as journal from "../journal.js";
+import type * as lib_openai from "../lib/openai.js";
 import type * as router from "../router.js";
 
 /**
@@ -30,6 +31,7 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   http: typeof http;
   journal: typeof journal;
+  "lib/openai": typeof lib_openai;
   router: typeof router;
 }>;
 export declare const api: FilterApi<

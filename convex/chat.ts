@@ -2,12 +2,15 @@ import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { internal } from "./_generated/api";
+import { zodToConvex } from "convex-helpers/server/zod";
+import {
+    getChatHistorySchema,
+    addChatMessageSchema,
+} from "./lib/zod/messageSchemas";
 
 // Chat Messages
 export const getChatHistory = query({
-    args: {
-        sessionId: v.string()
-    },
+    args: zodToConvex(getChatHistorySchema),
     handler: async (ctx, args) => {
         return await ctx.db
             .query("chatMessages")
@@ -18,12 +21,7 @@ export const getChatHistory = query({
 });
 
 export const addChatMessage = mutation({
-    args: {
-        content: v.string(),
-        role: v.union(v.literal("user"), v.literal("assistant")),
-        type: v.optional(v.union(v.literal("prompt"), v.literal("entry"), v.literal("feedback"))),
-        sessionId: v.string(),
-    },
+    args: zodToConvex(addChatMessageSchema),
     handler: async (ctx, args) => {
         const userId = await getAuthUserId(ctx);
 
@@ -54,13 +52,9 @@ export const addChatMessage = mutation({
                 session.title === "New Journal Session" &&
                 !session.titleGenerated
             ) {
-                await ctx.scheduler.runAfter(
-                    0,
-                    internal.ai.generateSessionTitle,
-                    {
-                        sessionId: args.sessionId,
-                    }
-                );
+                await ctx.scheduler.runAfter(0, internal.ai.generateSessionTitle, {
+                    sessionId: args.sessionId,
+                });
             }
         }
 

@@ -1,12 +1,15 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { zodToConvex } from "convex-helpers/server/zod";
+import {
+    getJournalEntriesSchema,
+    saveJournalEntrySchema,
+} from "./lib/zod/entrySchemas";
 
 // Journal Entries (for substantial entries)
 export const getJournalEntries = query({
-    args: {
-        sessionId: v.string()
-    },
+    args: zodToConvex(getJournalEntriesSchema),
     handler: async (ctx, args) => {
         return await ctx.db
             .query("journalEntries")
@@ -17,12 +20,7 @@ export const getJournalEntries = query({
 });
 
 export const saveJournalEntry = mutation({
-    args: {
-        content: v.string(),
-        mood: v.optional(v.string()),
-        tags: v.optional(v.array(v.string())),
-        sessionId: v.string(),
-    },
+    args: zodToConvex(saveJournalEntrySchema),
     handler: async (ctx, args) => {
         const userId = await getAuthUserId(ctx);
 
@@ -30,8 +28,6 @@ export const saveJournalEntry = mutation({
             userId: userId || undefined,
             sessionId: args.sessionId,
             content: args.content,
-            mood: args.mood,
-            tags: args.tags,
         });
     },
 });

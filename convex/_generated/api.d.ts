@@ -20,6 +20,9 @@ import type * as cleanup from "../cleanup.js";
 import type * as entries from "../entries.js";
 import type * as http from "../http.js";
 import type * as lib_openai from "../lib/openai.js";
+import type * as lib_zod_entrySchemas from "../lib/zod/entrySchemas.js";
+import type * as lib_zod_messageSchemas from "../lib/zod/messageSchemas.js";
+import type * as lib_zod_sessionSchemas from "../lib/zod/sessionSchemas.js";
 import type * as router from "../router.js";
 import type * as sessions from "../sessions.js";
 
@@ -39,6 +42,9 @@ declare const fullApi: ApiFromModules<{
   entries: typeof entries;
   http: typeof http;
   "lib/openai": typeof lib_openai;
+  "lib/zod/entrySchemas": typeof lib_zod_entrySchemas;
+  "lib/zod/messageSchemas": typeof lib_zod_messageSchemas;
+  "lib/zod/sessionSchemas": typeof lib_zod_sessionSchemas;
   router: typeof router;
   sessions: typeof sessions;
 }>;

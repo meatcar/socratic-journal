@@ -2,13 +2,16 @@ import { v } from "convex/values";
 import { query, mutation, internalMutation } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { internal } from "./_generated/api";
+import { zodToConvex } from "convex-helpers/server/zod";
+import {
+    createSessionSchema,
+    setActiveSessionSchema,
+    updateSessionTitleSchema,
+} from "./lib/zod/sessionSchemas";
 
 // Session Management
 export const createSession = mutation({
-    args: {
-        sessionId: v.string(),
-        title: v.optional(v.string()),
-    },
+    args: zodToConvex(createSessionSchema),
     handler: async (ctx, args) => {
         const userId = await getAuthUserId(ctx);
 
@@ -23,7 +26,11 @@ export const createSession = mutation({
         }
 
         // Schedule cleanup of old, single-message sessions
-        await ctx.scheduler.runAfter(0, internal.cleanup.cleanupSingleMessageSessions, { userId });
+        await ctx.scheduler.runAfter(
+            0,
+            internal.cleanup.cleanupSingleMessageSessions,
+            { userId }
+        );
 
         return await ctx.db.insert("sessions", {
             userId: userId || undefined,
@@ -60,7 +67,9 @@ export const getActiveSession = query({
         if (userId) {
             return await ctx.db
                 .query("sessions")
-                .withIndex("by_user_active", (q) => q.eq("userId", userId).eq("isActive", true))
+                .withIndex("by_user_active", (q) =>
+                    q.eq("userId", userId).eq("isActive", true)
+                )
                 .first();
         }
 
@@ -69,9 +78,7 @@ export const getActiveSession = query({
 });
 
 export const setActiveSession = mutation({
-    args: {
-        sessionId: v.string(),
-    },
+    args: zodToConvex(setActiveSessionSchema),
     handler: async (ctx, args) => {
         const userId = await getAuthUserId(ctx);
 
@@ -79,7 +86,9 @@ export const setActiveSession = mutation({
             // Deactivate the current active session
             const currentActive = await ctx.db
                 .query("sessions")
-                .withIndex("by_user_active", (q) => q.eq("userId", userId).eq("isActive", true))
+                .withIndex("by_user_active", (q) =>
+                    q.eq("userId", userId).eq("isActive", true)
+                )
                 .first();
 
             if (currentActive) {
@@ -100,10 +109,7 @@ export const setActiveSession = mutation({
 });
 
 export const updateSessionTitle = mutation({
-    args: {
-        sessionId: v.string(),
-        title: v.string(),
-    },
+    args: zodToConvex(updateSessionTitleSchema),
     handler: async (ctx, args) => {
         const session = await ctx.db
             .query("sessions")

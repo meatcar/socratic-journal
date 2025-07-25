@@ -8,10 +8,15 @@ interface SessionManagerProps {
   onSessionChange: (sessionId: string) => void;
 }
 
-export function SessionManager({ currentSessionId, onSessionChange }: SessionManagerProps) {
+export function SessionManager({
+  currentSessionId,
+  onSessionChange,
+}: SessionManagerProps) {
   const [showSessions, setShowSessions] = useState(false);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
-  
+  const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState("");
+
   const sessions = useQuery(api.journal.getSessions);
   const setActiveSession = useMutation(api.journal.setActiveSession);
   const updateSessionTitle = useMutation(api.journal.updateSessionTitle);
@@ -54,12 +59,32 @@ export function SessionManager({ currentSessionId, onSessionChange }: SessionMan
     }
   };
 
+  const handleTitleEdit = (session: any) => {
+    setEditingSessionId(session.sessionId);
+    setEditingTitle(session.title);
+  };
+
+  const handleTitleSave = async () => {
+    if (!editingSessionId || !editingTitle) return;
+    try {
+      await updateSessionTitle({
+        sessionId: editingSessionId,
+        title: editingTitle,
+      });
+      toast.success("Title updated");
+      setEditingSessionId(null);
+    } catch (error) {
+      console.error("Error updating title:", error);
+      toast.error("Failed to update title");
+    }
+  };
+
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleDateString([], {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -70,8 +95,18 @@ export function SessionManager({ currentSessionId, onSessionChange }: SessionMan
         className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
       >
         <span className="text-sm font-medium">Sessions</span>
-        <svg className={`w-4 h-4 transition-transform ${showSessions ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        <svg
+          className={`w-4 h-4 transition-transform ${showSessions ? "rotate-180" : ""}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M19 9l-7 7-7-7"
+          />
         </svg>
       </button>
 
@@ -81,7 +116,9 @@ export function SessionManager({ currentSessionId, onSessionChange }: SessionMan
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-gray-800">Journal Sessions</h3>
               <button
-                onClick={handleNewSession}
+                onClick={() => {
+                  void handleNewSession();
+                }}
                 disabled={isCreatingNew}
                 className="px-3 py-1 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 disabled:opacity-50 transition-colors"
               >
@@ -96,15 +133,57 @@ export function SessionManager({ currentSessionId, onSessionChange }: SessionMan
                 <div
                   key={session._id}
                   className={`p-4 border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors ${
-                    session.sessionId === currentSessionId ? 'bg-blue-50 border-blue-100' : ''
+                    session.sessionId === currentSessionId
+                      ? "bg-blue-50 border-blue-100"
+                      : ""
                   }`}
-                  onClick={() => handleSessionSelect(session.sessionId)}
+                  onClick={() => {
+                    void handleSessionSelect(session.sessionId);
+                  }}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h4 className="font-medium text-gray-800 text-sm">
-                        {session.title || "Untitled Session"}
-                      </h4>
+                      {editingSessionId === session.sessionId ? (
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={editingTitle}
+                            onChange={(e) => setEditingTitle(e.target.value)}
+                            className="w-full px-2 py-1 border rounded-md"
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") void handleTitleSave();
+                              if (e.key === "Escape") setEditingSessionId(null);
+                            }}
+                          />
+                          <button
+                            onClick={() => {
+                              void handleTitleSave();
+                            }}
+                            className="text-green-500"
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={() => setEditingSessionId(null)}
+                            className="text-red-500"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-medium text-gray-800 text-sm">
+                            {session.title || "Untitled Session"}
+                          </h4>
+                          <button
+                            onClick={() => handleTitleEdit(session)}
+                            className="text-xs text-blue-500"
+                          >
+                            Edit
+                          </button>
+                        </div>
+                      )}
                       {session.summary && (
                         <p className="text-xs text-gray-600 mt-1 line-clamp-2">
                           {session.summary}
@@ -120,12 +199,12 @@ export function SessionManager({ currentSessionId, onSessionChange }: SessionMan
                         )}
                       </div>
                     </div>
-                    
+
                     {!session.summary && session.messageCount > 3 && (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleGenerateSummary(session.sessionId);
+                          void handleGenerateSummary(session.sessionId);
                         }}
                         className="text-xs text-blue-600 hover:text-blue-800 ml-2"
                       >

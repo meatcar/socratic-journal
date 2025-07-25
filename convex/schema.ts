@@ -12,6 +12,8 @@ const applicationTables = {
     tags: v.optional(v.array(v.string())),
     isActive: v.boolean(), // Whether this session is currently active
     messageCount: v.number(), // Number of messages in this session
+    titleGenerated: v.optional(v.boolean()),
+    userEditedTitle: v.optional(v.boolean()),
   }).index("by_user", ["userId"])
     .index("by_session_id", ["sessionId"])
     .index("by_user_active", ["userId", "isActive"])

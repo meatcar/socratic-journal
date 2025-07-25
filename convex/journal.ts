@@ -112,7 +112,10 @@ export const updateSessionTitle = mutation({
       .first();
 
     if (session) {
-      await ctx.db.patch(session._id, { title: args.title });
+      await ctx.db.patch(session._id, {
+        title: args.title,
+        userEditedTitle: true,
+      });
     }
   },
 });
@@ -174,10 +177,25 @@ export const addChatMessage = mutation({
       .first();
 
     if (session) {
+      const newCount = session.messageCount + 1;
       await ctx.db.patch(session._id, {
-        messageCount: session.messageCount + 1,
-        isActive: true
+        messageCount: newCount,
+        isActive: true,
       });
+
+      if (
+        newCount === 6 &&
+        session.title === "New Journal Session" &&
+        !session.titleGenerated
+      ) {
+        await ctx.scheduler.runAfter(
+          0,
+          internal.journal.generateSessionTitle,
+          {
+            sessionId: args.sessionId,
+          }
+        );
+      }
     }
 
     return messageId;
@@ -309,6 +327,69 @@ ${entriesContext}`;
   },
 });
 
+export const generateSessionTitle = internalAction({
+  args: { sessionId: v.string() },
+  handler: async (ctx, args): Promise<string | null> => {
+    const chatHistory = await ctx.runQuery(api.journal.getChatHistory, {
+      sessionId: args.sessionId,
+    });
+
+    if (chatHistory.length < 6) return null;
+
+    const conversationText: string = chatHistory
+      .map((msg: any) => `${msg.role}: ${msg.content}`)
+      .join("\n");
+
+    const { generateObject } = await import("ai");
+    const { createOpenAI } = await import("@ai-sdk/openai");
+    const openai = createOpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+
+    try {
+      const { object } = await generateObject({
+        model: openai("gpt-4o-mini"),
+        system: `Generate a concise, meaningful title (3-6 words) for this journaling session. Focus on the main theme, emotion, or topic discussed. Be specific but brief.`,
+        prompt: conversationText,
+        schema: z.object({
+          title: z.string().describe("A concise session title"),
+        }),
+        maxTokens: 50,
+        temperature: 0.3,
+      });
+
+      await ctx.runMutation(internal.journal.updateSessionTitleInternal, {
+        sessionId: args.sessionId,
+        title: object.title,
+      });
+
+      return object.title;
+    } catch (error) {
+      console.error("Title generation failed:", error);
+      return null;
+    }
+  },
+});
+
+export const updateSessionTitleInternal = internalMutation({
+  args: {
+    sessionId: v.string(),
+    title: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const session = await ctx.db
+      .query("sessions")
+      .withIndex("by_session_id", (q) => q.eq("sessionId", args.sessionId))
+      .first();
+
+    if (session) {
+      await ctx.db.patch(session._id, {
+        title: args.title,
+        titleGenerated: true,
+      });
+    }
+  },
+});
 // Generate session summary
 export const generateSessionSummary = action({
   args: {
